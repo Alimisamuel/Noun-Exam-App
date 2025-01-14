@@ -6,6 +6,7 @@ import {
   Checkbox,
   Typography,
   Button,
+  Switch,
 } from "@mui/material";
 import React, { useState } from "react";
 import PropTypes from "prop-types";
@@ -44,13 +45,22 @@ const QuizComponent = ({ title, data }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [showAnswer, setShowAnswer] = useState(false);
+  const [prev, setPrev] = useState(null);
+  const [isRandom, setIsRandom] = useState(true);
 
   // Function to load a new random question
   const getRandomQuestion = () => {
-    const randomIndex = Math.floor(Math.random() * data?.length);
-    setCurrentQuestionIndex(randomIndex);
-    setShowAnswer(false); // Reset answer visibility
-    setUserAnswer(""); // Reset user's input
+    setPrev(currentQuestionIndex);
+    if (isRandom) {
+      const randomIndex = Math.floor(Math.random() * data?.length);
+      setCurrentQuestionIndex(randomIndex);
+      setShowAnswer(false); // Reset answer visibility
+      setUserAnswer(""); // Reset user's input
+    } else {
+      setCurrentQuestionIndex((prev) => prev + 1);
+      setShowAnswer(false); // Reset answer visibility
+      setUserAnswer("");
+    }
   };
 
   const currentQuestion = data[currentQuestionIndex];
@@ -61,13 +71,21 @@ const QuizComponent = ({ title, data }) => {
     setValue(newValue);
   };
 
+  const handlePrevious = () => {
+    if (isRandom) {
+      setCurrentQuestionIndex(prev);
+    } else {
+      setCurrentQuestionIndex((prev) => prev - 1);
+    }
+  };
+
   const handleOptionSelect = () => {};
 
   return (
     <>
       <AppBar>
         <Box sx={{ width: "100%" }}>
-          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Box sx={{ borderBottom: 1, borderColor: "secondary.main" }}>
             <Tabs
               variant="fullWidth"
               textColor="secondary"
@@ -116,13 +134,22 @@ const QuizComponent = ({ title, data }) => {
               }}
             >
               {title}
-            </h1>
+            </h1>{" "}
+            <Switch
+              color="secondary"
+              checked={isRandom}
+              onChange={(e) => setIsRandom(e.target.checked)}
+            />
           </Box>
 
-          <h2 style={{ color: "#f2e5d7" }}>Random Question
-           <br/><small style={{fontWeight:300, fontSize:'12px'}}>{currentQuestionIndex} of {data?.length}</small>
+          <h2 style={{ color: "#f2e5d7" }}>
+            Random Question
+            <br />
+            <small  style={{ fontWeight: 300, fontSize: "12px" }}>
+              {currentQuestionIndex + 1} of {data?.length}
+            </small>
           </h2>
-          
+
           <div style={{ margin: "20px 0", fontSize: "18px", color: "#f2e5d7" }}>
             <strong>Question:</strong> {currentQuestion.question}
           </div>
@@ -166,18 +193,23 @@ const QuizComponent = ({ title, data }) => {
           )}
 
           <button
-            onClick={() => setShowAnswer(true)}
+            onClick={() => handlePrevious()}
+            disabled={prev === null }
             style={{
               padding: "10px 20px",
-              backgroundColor: "#007BFF",
+              backgroundColor: "orange",
               color: "#fff",
               border: "none",
               borderRadius: "5px",
               cursor: "pointer",
               marginRight: "10px",
+              ...((prev === null) && {
+                backgroundColor: "#dedede",
+                opacity: 0.5,
+              }),
             }}
           >
-            Reveal Answer
+            Prev Question
           </button>
           <button
             onClick={getRandomQuestion}
@@ -192,6 +224,22 @@ const QuizComponent = ({ title, data }) => {
           >
             Next Question
           </button>
+          <button
+            onClick={() => setShowAnswer(true)}
+            style={{
+              padding: "10px 20px",
+              backgroundColor: "#007BFF",
+              color: "#fff",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              marginLeft: "10px",
+              marginTop: "20px",
+            }}
+          >
+            Reveal Answer
+          </button>
+
           {showAnswer && (
             <div
               style={{ marginTop: "20px", fontSize: "18px", color: "#FF6347" }}
@@ -239,6 +287,29 @@ const QuizComponent = ({ title, data }) => {
                 >
                   <strong>Question {index + 1}:</strong> {item?.question}
                 </p>
+                {
+                 item?.options && (
+                  <>
+                      {item.options.map((option, index) => (
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  {" "}
+                  <Checkbox
+                    color="secondary"
+                    sx={{
+                      "&.MuiCheckbox-root": { borderColor: "secondary.main" },
+                    }}
+                    key={index}
+                    onClick={() => handleOptionSelect(option)}
+                  />
+                  <Typography sx={{ color: "secondary.main" }}>
+                    {" "}
+                    {option}
+                  </Typography>
+                </Box>
+              ))}
+                  </>
+                 )
+                }
                 <p
                   style={{
                     margin: "20px 0",
@@ -257,9 +328,11 @@ const QuizComponent = ({ title, data }) => {
         </div>
       </CustomTabPanel>
 
-      <Box align="center" sx={{mt:2}}>
+      <Box align="center" sx={{ mt: 2 }}>
         <Link to="/">
-          <Button variant="contained" sx={{textTransform:'initial'}}>Back Home</Button>
+          <Button variant="contained" sx={{ textTransform: "initial" }}>
+            Back Home
+          </Button>
         </Link>
       </Box>
     </>
